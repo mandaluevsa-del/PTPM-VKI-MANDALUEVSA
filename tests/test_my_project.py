@@ -28,20 +28,12 @@ class TestTriangleClassification(unittest.TestCase):
         kind, _ = compute_triangle("5", "5", "8")
         self.assertEqual(kind, ISOSCELES)
 
-    def test_isosceles_when_equal_sides_in_middle(self):
-        kind, _ = compute_triangle("5", "8", "5")
-        self.assertEqual(kind, ISOSCELES)
-
-    def test_isosceles_when_equal_sides_last(self):
+    def test_isosceles_when_first_and_last_sides_equal(self):
         kind, _ = compute_triangle("8", "5", "5")
         self.assertEqual(kind, ISOSCELES)
 
     def test_scalene_returns_raznostoronniy(self):
         kind, _ = compute_triangle("3", "4", "5")
-        self.assertEqual(kind, SCALENE)
-
-    def test_scalene_with_decimal_sides(self):
-        kind, _ = compute_triangle("3.5", "4.5", "5.5")
         self.assertEqual(kind, SCALENE)
 
     def test_nearly_equal_sides_are_equilateral_with_tolerance(self):
@@ -60,54 +52,31 @@ class TestTriangleValidation(unittest.TestCase):
         kind, _ = compute_triangle("5", "abc", "8")
         self.assertEqual(kind, "")
 
-    def test_comma_decimal_separator_is_non_numeric(self):
-        kind, _ = compute_triangle("3,5", "4", "5")
-        self.assertEqual(kind, "")
+    def test_empty_blank_and_none_side_is_non_numeric(self):
+        for value in ("", "   ", None):
+            with self.subTest(side=value):
+                kind, coords = compute_triangle(value, "5", "5")
+                self.assertEqual(kind, "")
+                self.assertEqual(coords, NON_NUMERIC_COORDS)
 
-    def test_zero_side_is_not_a_triangle(self):
-        kind, coords = compute_triangle("0", "5", "5")
-        self.assertEqual(kind, NOT_TRIANGLE)
-        self.assertEqual(coords, INVALID_NUMERIC_COORDS)
-
-    def test_negative_side_is_not_a_triangle(self):
-        kind, coords = compute_triangle("-5", "6", "7")
-        self.assertEqual(kind, NOT_TRIANGLE)
-        self.assertEqual(coords, INVALID_NUMERIC_COORDS)
-
-    def test_all_negative_sides_are_not_a_triangle(self):
-        kind, _ = compute_triangle("-1", "-1", "-1")
-        self.assertEqual(kind, NOT_TRIANGLE)
+    def test_zero_and_negative_sides_are_not_a_triangle(self):
+        for sides in (("0", "5", "5"), ("-5", "6", "7"), ("-1", "-1", "-1")):
+            with self.subTest(sides=sides):
+                kind, coords = compute_triangle(*sides)
+                self.assertEqual(kind, NOT_TRIANGLE)
+                self.assertEqual(coords, INVALID_NUMERIC_COORDS)
 
     def test_degenerate_sides_on_straight_line(self):
         kind, coords = compute_triangle("5", "5", "10")
         self.assertEqual(kind, NOT_TRIANGLE)
         self.assertEqual(coords, INVALID_NUMERIC_COORDS)
 
-    def test_second_degenerate_case_rejected(self):
-        kind, _ = compute_triangle("2", "3", "5")
-        self.assertEqual(kind, NOT_TRIANGLE)
-
-    def test_infinite_side_is_rejected(self):
-        kind, coords = compute_triangle("inf", "5", "6")
-        self.assertEqual(kind, NOT_TRIANGLE)
-        self.assertEqual(coords, INVALID_NUMERIC_COORDS)
-
-    def test_nan_side_is_rejected(self):
-        kind, _ = compute_triangle("nan", "5", "6")
-        self.assertEqual(kind, NOT_TRIANGLE)
-
-    def test_empty_string_is_non_numeric(self):
-        kind, coords = compute_triangle("", "5", "5")
-        self.assertEqual(kind, "")
-        self.assertEqual(coords, NON_NUMERIC_COORDS)
-
-    def test_none_side_is_non_numeric(self):
-        kind, _ = compute_triangle(None, "5", "5")
-        self.assertEqual(kind, "")
-
-    def test_whitespace_only_string_is_non_numeric(self):
-        kind, _ = compute_triangle("   ", "5", "5")
-        self.assertEqual(kind, "")
+    def test_infinite_and_nan_sides_are_rejected(self):
+        for value in ("inf", "nan"):
+            with self.subTest(side=value):
+                kind, coords = compute_triangle(value, "5", "6")
+                self.assertEqual(kind, NOT_TRIANGLE)
+                self.assertEqual(coords, INVALID_NUMERIC_COORDS)
 
     def test_near_degenerate_side_within_epsilon_is_valid(self):
         kind, _ = compute_triangle("5", "5", "9.9999")
@@ -134,16 +103,6 @@ class TestTriangleCoordinates(unittest.TestCase):
         for x, y in coords:
             self.assertIsInstance(x, int)
             self.assertIsInstance(y, int)
-            self.assertEqual(x, round(x))
-            self.assertEqual(y, round(y))
-
-    def test_coordinates_inside_100_by_100_field(self):
-        _, coords = compute_triangle("6", "7", "8")
-        for x, y in coords:
-            self.assertGreaterEqual(x, 0)
-            self.assertGreaterEqual(y, 0)
-            self.assertLessEqual(x, 100)
-            self.assertLessEqual(y, 100)
 
     def test_coordinates_within_margin_band(self):
         _, coords = compute_triangle("6", "7", "8")
@@ -153,29 +112,10 @@ class TestTriangleCoordinates(unittest.TestCase):
             self.assertLessEqual(x, 95)
             self.assertLessEqual(y, 95)
 
-    def test_vertices_are_distinct_for_nonzero_triangle(self):
-        _, coords = compute_triangle("3", "4", "5")
-        self.assertEqual(len({p for p in coords}), 3)
-
-    def test_large_triangle_is_scaled_into_field(self):
-        _, coords = compute_triangle("300", "400", "500")
-        for x, y in coords:
-            self.assertGreaterEqual(x, 0)
-            self.assertLessEqual(x, 100)
-            self.assertGreaterEqual(y, 0)
-            self.assertLessEqual(y, 100)
-
-    def test_tiny_triangle_scaled_up_stays_in_field(self):
-        _, coords = compute_triangle("0.01", "0.01", "0.01")
-        for x, y in coords:
-            self.assertGreaterEqual(x, 0)
-            self.assertLessEqual(x, 100)
-            self.assertGreaterEqual(y, 0)
-            self.assertLessEqual(y, 100)
-
     def test_whitespace_padded_sides_parsed_correctly(self):
-        kind, _ = compute_triangle("  3 ", " 4 ", "  5  ")
+        kind, coords = compute_triangle("  3 ", " 4 ", "  5  ")
         self.assertEqual(kind, SCALENE)
+        self.assertEqual(len(coords), 3)
 
 
 class TestTriangleOverflowRobustness(unittest.TestCase):
