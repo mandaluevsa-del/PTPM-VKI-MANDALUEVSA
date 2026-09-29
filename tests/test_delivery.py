@@ -1,6 +1,10 @@
 """Юнит-тесты для delivery_service.py (расчёт стоимости доставки)."""
 
+import os
+import sys
 import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.delivery_service import calculate_delivery_cost
 
