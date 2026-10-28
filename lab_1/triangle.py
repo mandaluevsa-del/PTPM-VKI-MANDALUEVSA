@@ -23,6 +23,8 @@ INVALID_NUMERIC_COORDS = [(-1, -1), (-1, -1), (-1, -1)]
 
 def _parse_float(text):
     """Парсит строку как float. Возвращает None при нечисловых данных."""
+    if text is None:
+        return None
     try:
         return float(text.strip())
     except (ValueError, TypeError):
@@ -69,6 +71,9 @@ def compute_triangle(side_a, side_b, side_c):
     bx, by = c, 0.0
     cx = (a * a + c * c - b * b) / (2.0 * c)
     cy = math.sqrt(max(a * a - cx * cx, 0.0))
+
+    if not (math.isfinite(cx) and math.isfinite(cy)):
+        return NOT_TRIANGLE, INVALID_NUMERIC_COORDS
 
     coords = [(ax, ay), (bx, by), (cx, cy)]
 

@@ -11,7 +11,7 @@ date_format = "%Y-%m-%d %H:%M:%S"
 def configure_logging():
     os.makedirs("Logs", exist_ok=True)
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.info,
         format=log_format,
         datefmt=date_format,
         handlers=[
